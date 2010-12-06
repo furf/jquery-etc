@@ -96,7 +96,7 @@
     if (time instanceof Date) {
       time = time.getTime();
     }
-    if (!(typeof time === 'number') || isNaN(time)) {
+    if (typeof time !== 'number' || isNaN(time)) {
       throw 'jQuery.ensureTime: Invalid date: ' + time;
     }
     return time;
@@ -112,7 +112,7 @@
       date = new Date(date);
     }
 
-    switch(floor) {
+    switch (floor) {
       case 'year':   date.setMonth(0);
       case 'month':  date.setDate(1);
       case 'day':    date.setHours(0);
@@ -226,7 +226,7 @@
 
     F.prototype = parent.prototype;
 
-    child.prototype = new F ();
+    child.prototype = new F();
     child.prototype.constructor = child;
     child.parent = parent.prototype;
     child.superclass = parent.prototype; // provided for back-compat @mlb
