@@ -25,9 +25,11 @@
   /**
    * Set and get deeply nested properties from an object
    */
+  var rebrackets = /\[(\d+)\]/g;
+  
   $.deep = function (obj, prop, val) {
 
-    var props = prop.split('.'),
+    var props = prop.replace(rebrackets, '.$1').split('.'),
         root, i = 0, n, p, ret;
 
     // Set deep value
@@ -221,14 +223,14 @@
     var name;
 
     function F () {
-      this.__parent__ = parent.prototype;
+      this.__super__ = parent.prototype;
     }
 
     F.prototype = parent.prototype;
 
     child.prototype = new F();
     child.prototype.constructor = child;
-    child.parent = parent.prototype;
+    child.__super__ = parent.prototype;
     child.superclass = parent.prototype; // provided for back-compat @mlb
 
     if (parent.prototype.constructor === Object.prototype.constructor) {
