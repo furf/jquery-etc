@@ -25,11 +25,15 @@
   /**
    * Set and get deeply nested properties from an object
    */
-  var rebrackets = /\[(\d+)\]/g;
+  var rebrackets = /\[(\d+)\]/g,
+      reemptydot = /^\./;
   
   $.deep = function (obj, prop, val) {
 
-    var props = prop.replace(rebrackets, '.$1').split('.'),
+console.log(prop.replace(/\[(\d+)\]/g, '$1.$2'));
+
+    // @todo not a regexp guru -- can this be reduced to one expression?
+    var props = prop.replace(rebrackets, '.$1').replace(reemptydot, '').split('.'),
         root, i = 0, n, p, ret;
 
     // Set deep value
