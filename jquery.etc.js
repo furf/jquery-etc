@@ -15,10 +15,21 @@
    * proxy function for event callbacks - omits event argument for better
    * compatibility with external APIs
    */
-  $.eventProxy = function (fn, proxy, context) {
-    fn = $.proxy.apply(this, arguments);
+  $.eventProxy = function () {
+    var proxy = $.proxy.apply(null, arguments);
     return function () {
-      return fn.apply(this, Array.prototype.slice.call(arguments, 1));
+      return proxy.apply(null, Array.prototype.slice.call(arguments, 1));
+    };
+  };
+
+  /**
+   * proxy function for callbacks - passes event data property for better
+   * compatibility with external APIs
+   */
+  $.eventDataProxy = function () {
+    var proxy = $.proxy.apply(null, arguments);
+    return function (evt) {
+      return proxy.call(null, evt.data);
     };
   };
 
@@ -175,8 +186,16 @@
   /**
    * First in flight
    */
+  var ordinals = 'th st nd rd'.split(' ');
+  
   $.ordinal = function (n) {
-    return ['th', 'st', 'nd', 'rd'][(n = n < 0 ? -n : n) > 10 && n < 14 || !(n = ~~n % 10) || n > 3 ? 0 : n];
+    return ordinals[(n = n < 0 ? -n : n) > 10 && n < 14 || !(n = ~~n % 10) || n > 3 ? 0 : n];
+  };
+
+  var ordinals_es = 'm r d r t t t m v n'.split(' ');
+  
+  $.ordinal_es = function (n, v) {
+    return ordinals_es[(n < 0 ? -n : n) > 10 && n < 13 ? 0 : ~~n % 10] + v;
   };
 
   /**
@@ -224,16 +243,12 @@
 
     var name;
 
-    function F () {
-      this.__super__ = parent.prototype;
-    }
-
+    function F () {}
     F.prototype = parent.prototype;
 
     child.prototype = new F();
     child.prototype.constructor = child;
-    child.__super__ = parent.prototype;
-    child.superclass = parent.prototype; // provided for back-compat @mlb
+    child.superclass = parent.prototype;
 
     if (parent.prototype.constructor === Object.prototype.constructor) {
       parent.prototype.constructor = parent;
