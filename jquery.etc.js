@@ -34,6 +34,17 @@
   };
 
   /**
+   * curry in a hurry
+   */
+  $.curry = function (fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return function () {
+      Array.prototype.unshift.apply(arguments, args);
+      return fn.apply(null, arguments);
+    };
+  };
+
+  /**
    * Set and get deeply nested properties from an object
    */
   var rebrackets = /\[(\d+)\]/g,
