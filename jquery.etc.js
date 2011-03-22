@@ -34,16 +34,41 @@
   };
 
   /**
+   * mo funkiness
+   */
+  function _makeCurry (method) {
+    return function (fn) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return function () {
+        Array.prototype[method].apply(arguments, args);
+        return fn.apply(null, arguments);
+      };
+    };
+  }
+  
+  /**
    * curry in a hurry
    */
-  $.curry = function (fn) {
-    var args = Array.prototype.slice.call(arguments, 1);
-    return function () {
-      Array.prototype.unshift.apply(arguments, args);
-      return fn.apply(null, arguments);
-    };
-  };
+  $.curry = _makeCurry('unshift');
 
+  /**
+   * right curry right quick
+   */
+  $.rcurry = _makeCurry('push');
+
+  /**
+   * Split an array of items based on return value of true/false from fn
+   */
+  $.forkArray = function (items, fn) {
+    var positives = [],
+        negatives = [],
+        i = 0, n = items.length;        
+    for (; i < n; ++i) {
+      (fn(items[i], i) ? positives : negatives).push(items[i]);
+    }
+    return [positives, negatives];
+  };
+  
   /**
    * Set and get deeply nested properties from an object
    */
