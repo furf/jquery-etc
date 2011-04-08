@@ -130,49 +130,16 @@
     return $.isArray(arr) ? arr : typeof arr !== 'undefined' ? [arr] : [];
   };
 
-  /**
-   * Ensure that we have a date to the prom
-   */
-  $.ensureDate = function (date) {
-    return date ? date instanceof Date ? date : new Date(date) : new Date();
-  };
-
-  /**
-   * Ensure that we have a good time
-   */
-  $.ensureTime = function (time) {
-    if (typeof time === 'string') {
-      time = new Date(time);
+  // @todo add maintainSourceKey, modifySource args like $.rehash
+  $.flip = function (source) {
+    var key, val, target = {};
+    for (key in source) {
+      val = source[key];
+      if (typeof val === 'string') {
+        target[val] = key;
+      }
     }
-    if (time instanceof Date) {
-      time = time.getTime();
-    }
-    if (typeof time !== 'number' || isNaN(time)) {
-      throw 'jQuery.ensureTime: Invalid date: ' + time;
-    }
-    return time;
-  };
-
-  // @todo incorporate ensureDate
-  $.floorDate = function (floor /*, date, clone */) {
-
-    var clone = (arguments[2] === true),
-        date  = (typeof arguments[1] !== 'undefined') ? arguments[1] : new Date();
-
-    if (clone || !(date instanceof Date)) {
-      date = new Date(date);
-    }
-
-    switch (floor) {
-      case 'year':   date.setMonth(0);
-      case 'month':  date.setDate(1);
-      case 'day':    date.setHours(0);
-      case 'hour':   date.setMinutes(0);
-      case 'minute': date.setSeconds(0);
-      default:       date.setMilliseconds(0);
-    }
-
-    return date;
+    return target;
   };
 
   /**
@@ -189,7 +156,7 @@
         sourceVal = source[sourceKey];
 
         // Convert to string to allow rehashing by booleans!
-        targetKey = '' + $.deep(sourceVal, property);
+        targetKey = property ? '' + $.deep(sourceVal, property) : property;
 
         if (targetKey) {
 
@@ -211,6 +178,54 @@
 
     return target;
   };
+
+  /**
+   * Ensure that we have a date to the prom
+   */
+  $.ensureDate = function (value) {
+    var date = typeof value !== 'undefined' ? value instanceof Date ? value : new Date(value) : new Date();
+    if (isNaN(date.getTime())) {
+      throw 'jQuery.ensureDate: Invalid date';
+    }
+    return date;    
+  };
+
+  /**
+   * Ensure that we have a good time
+   */
+  $.ensureTime = function (time) {
+    if (typeof time === 'string') {
+      time = new Date(time);
+    }
+    if (time instanceof Date) {
+      time = time.getTime();
+    }
+    if (typeof time !== 'number' || isNaN(time)) {
+      throw 'jQuery.ensureTime: Invalid date';
+    }
+    return time;
+  };
+
+  // @todo incorporate ensureDate
+  $.floorDate = function (floor, date, clone, firstDay) {
+
+    // Sending toString will ensure new date
+    date = $.ensureDate(clone ? date.toString() : date);
+
+    switch (floor || 'day') {
+      case 'year':   date.setMonth(0);
+      case 'month':
+      case 'week':   date.setDate(floor === 'week' ? date.getDate() - date.getDay() + ~~+firstDay : 1);
+      case 'day':    date.setHours(0);
+      case 'hour':   date.setMinutes(0);
+      case 'minute': date.setSeconds(0);
+      default:       date.setMilliseconds(0);
+    }
+
+    return date;
+  };
+  
+  $.extend($.floorDate, $.flip('SUNDAY MONDAY TUESDAY WEDNESDAY THURSDAY FRIDAY SATURDAY'.split(' ')));
 
   /**
    * Dots!
