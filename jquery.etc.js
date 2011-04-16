@@ -15,13 +15,60 @@
    * proxy function for event callbacks - omits event argument for better
    * compatibility with external APIs
    */
-  $.eventProxy = function (fn, proxy, context) {
-    fn = $.proxy.apply(this, arguments);
+  $.eventProxy = function () {
+    var proxy = $.proxy.apply(null, arguments);
     return function () {
-      return fn.apply(this, Array.prototype.slice.call(arguments, 1));
+      return proxy.apply(null, Array.prototype.slice.call(arguments, 1));
     };
   };
 
+  /**
+   * proxy function for callbacks - passes event data property for better
+   * compatibility with external APIs
+   */
+  $.eventDataProxy = function () {
+    var proxy = $.proxy.apply(null, arguments);
+    return function (evt) {
+      return proxy.call(null, evt.data);
+    };
+  };
+
+  /**
+   * mo funkiness
+   */
+  function _makeCurry (method) {
+    return function (fn) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      return function () {
+        Array.prototype[method].apply(arguments, args);
+        return fn.apply(null, arguments);
+      };
+    };
+  }
+  
+  /**
+   * curry in a hurry
+   */
+  $.curry = _makeCurry('unshift');
+
+  /**
+   * right curry right quick
+   */
+  $.rcurry = _makeCurry('push');
+
+  /**
+   * Split an array of items based on return value of true/false from fn
+   */
+  $.forkArray = function (items, fn) {
+    var positives = [],
+        negatives = [],
+        i = 0, n = items.length;        
+    for (; i < n; ++i) {
+      (fn(items[i], i) ? positives : negatives).push(items[i]);
+    }
+    return [positives, negatives];
+  };
+  
   /**
    * Set and get deeply nested properties from an object
    */
@@ -83,49 +130,16 @@
     return $.isArray(arr) ? arr : typeof arr !== 'undefined' ? [arr] : [];
   };
 
-  /**
-   * Ensure that we have a date to the prom
-   */
-  $.ensureDate = function (date) {
-    return date ? date instanceof Date ? date : new Date(date) : new Date();
-  };
-
-  /**
-   * Ensure that we have a good time
-   */
-  $.ensureTime = function (time) {
-    if (typeof time === 'string') {
-      time = new Date(time);
+  // @todo add maintainSourceKey, modifySource args like $.rehash
+  $.flip = function (source) {
+    var key, val, target = {};
+    for (key in source) {
+      val = source[key];
+      if (typeof val === 'string') {
+        target[val] = key;
+      }
     }
-    if (time instanceof Date) {
-      time = time.getTime();
-    }
-    if (typeof time !== 'number' || isNaN(time)) {
-      throw 'jQuery.ensureTime: Invalid date: ' + time;
-    }
-    return time;
-  };
-
-  // @todo incorporate ensureDate
-  $.floorDate = function (floor /*, date, clone */) {
-
-    var clone = (arguments[2] === true),
-        date  = (typeof arguments[1] !== 'undefined') ? arguments[1] : new Date();
-
-    if (clone || !(date instanceof Date)) {
-      date = new Date(date);
-    }
-
-    switch (floor) {
-      case 'year':   date.setMonth(0);
-      case 'month':  date.setDate(1);
-      case 'day':    date.setHours(0);
-      case 'hour':   date.setMinutes(0);
-      case 'minute': date.setSeconds(0);
-      default:       date.setMilliseconds(0);
-    }
-
-    return date;
+    return target;
   };
 
   /**
@@ -142,7 +156,7 @@
         sourceVal = source[sourceKey];
 
         // Convert to string to allow rehashing by booleans!
-        targetKey = '' + $.deep(sourceVal, property);
+        targetKey = property ? '' + $.deep(sourceVal, property) : property;
 
         if (targetKey) {
 
@@ -166,6 +180,54 @@
   };
 
   /**
+   * Ensure that we have a date to the prom
+   */
+  $.ensureDate = function (value) {
+    var date = typeof value !== 'undefined' ? value instanceof Date ? value : new Date(value) : new Date();
+    if (isNaN(date.getTime())) {
+      throw 'jQuery.ensureDate: Invalid date';
+    }
+    return date;    
+  };
+
+  /**
+   * Ensure that we have a good time
+   */
+  $.ensureTime = function (time) {
+    if (typeof time === 'string') {
+      time = new Date(time);
+    }
+    if (time instanceof Date) {
+      time = time.getTime();
+    }
+    if (typeof time !== 'number' || isNaN(time)) {
+      throw 'jQuery.ensureTime: Invalid date';
+    }
+    return time;
+  };
+
+  // @todo incorporate ensureDate
+  $.floorDate = function (floor, date, clone, firstDay) {
+
+    // Sending toString will ensure new date
+    date = $.ensureDate(clone ? date.toString() : date);
+
+    switch (floor || 'day') {
+      case 'year':   date.setMonth(0);
+      case 'month':
+      case 'week':   date.setDate(floor === 'week' ? date.getDate() - date.getDay() + ~~+firstDay : 1);
+      case 'day':    date.setHours(0);
+      case 'hour':   date.setMinutes(0);
+      case 'minute': date.setSeconds(0);
+      default:       date.setMilliseconds(0);
+    }
+
+    return date;
+  };
+  
+  $.extend($.floorDate, $.flip('SUNDAY MONDAY TUESDAY WEDNESDAY THURSDAY FRIDAY SATURDAY'.split(' ')));
+
+  /**
    * Dots!
    */
   $.truncate = function (str, n) {
@@ -175,8 +237,16 @@
   /**
    * First in flight
    */
+  var ordinals = 'th st nd rd'.split(' ');
+  
   $.ordinal = function (n) {
-    return ['th', 'st', 'nd', 'rd'][(n = n < 0 ? -n : n) > 10 && n < 14 || !(n = ~~n % 10) || n > 3 ? 0 : n];
+    return ordinals[(n = n < 0 ? -n : n) > 10 && n < 14 || !(n = ~~n % 10) || n > 3 ? 0 : n];
+  };
+
+  var ordinals_es = 'm r d r t t t m v n'.split(' ');
+  
+  $.ordinal_es = function (n, v) {
+    return ordinals_es[(n < 0 ? -n : n) > 10 && n < 13 ? 0 : ~~n % 10] + v;
   };
 
   /**
@@ -224,16 +294,12 @@
 
     var name;
 
-    function F () {
-      this.__super__ = parent.prototype;
-    }
-
+    function F () {}
     F.prototype = parent.prototype;
 
     child.prototype = new F();
     child.prototype.constructor = child;
-    child.__super__ = parent.prototype;
-    child.superclass = parent.prototype; // provided for back-compat @mlb
+    child.superclass = parent.prototype;
 
     if (parent.prototype.constructor === Object.prototype.constructor) {
       parent.prototype.constructor = parent;
