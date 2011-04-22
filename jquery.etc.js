@@ -230,8 +230,8 @@
   /**
    * Dots!
    */
-  $.truncate = function (str, n) {
-    return str.length < n ? str : str.match(new RegExp('^(.{0,' + (n - 1) + '}\\S)\\s'))[1];
+  $.truncate = function (str, n, dots) {
+    return str.length < n ? str : str.match(new RegExp('^(.{0,' + (n - 1) + '}\\S)\\s'))[1] + (dots || '');
   };
 
   /**
