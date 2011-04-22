@@ -130,7 +130,7 @@
     return $.isArray(arr) ? arr : typeof arr !== 'undefined' ? [arr] : [];
   };
 
-  // @todo add maintainSourceKey, modifySource args like $.rehash
+  // @todo ? add maintainSourceKey, modifySource args like $.rehash
   $.flip = function (source) {
     var key, val, target = {};
     for (key in source) {
@@ -231,7 +231,7 @@
    * Dots!
    */
   $.truncate = function (str, n) {
-    return str.length < n ? str : (new RegExp('^(.{0,' + (n - 1) + '}\\S)(\\s|jQuery)')).exec(str)[1] + '...';
+    return str.length < n ? str : str.match(new RegExp('^(.{0,' + (n - 1) + '}\\S)\\s'))[1];
   };
 
   /**
